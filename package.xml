@@ -3,18 +3,19 @@
 <package format="3">
 	<name>zed_plot</name>
 	<version>0.2.0</version>
-	<description>    This package is a tutorial showing how to subscribe to ZED pose and odometry messages  </description>
-	<maintainer email="support@stereolabs.com">STEREOLABS</maintainer>
+	<description>This package plots zed odom and s2 scan using matplotlib</description>
+	<maintainer email="you@email.com">NCSU Yoon Lab</maintainer>
 	<license>Apache License 2.0</license>
 	<url type="website">https://www.stereolabs.com/</url>
-	<url type="repository">https://github.com/stereolabs/zed-ros2-wrapper</url>
-	<url type="bugtracker">https://github.com/stereolabs/zed-ros2-wrapper/issues</url>
+	<url type="repository">https://github.com/ncsu-yoon-lab/zed-ros2-plot</url>
+	<url type="bugtracker">https://github.com/ncsu-yoon-lab/zed-ros2-plot/issues</url>
 	<buildtool_depend>ament_cmake</buildtool_depend>
 	<depend>rclcpp</depend>
 	<depend>geometry_msgs</depend>
 	<depend>nav_msgs</depend>
 	<depend>tf2</depend>
 	<depend>tf2_ros</depend>
+	<depend>sensor_msgs</depend>
 	<test_depend>ament_lint_auto</test_depend>
 	<test_depend>ament_lint_common</test_depend>
 	<test_depend>ament_cmake_clang_format</test_depend>
