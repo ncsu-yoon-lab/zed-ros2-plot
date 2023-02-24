@@ -24,6 +24,7 @@
 #include <rclcpp/qos.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <matplotlibcpp.h>
+#include "sensor_msgs/msg/laser_scan.hpp"
 
 namespace plt = matplotlibcpp;
 
@@ -31,11 +32,12 @@ using namespace std::placeholders;
 
 #define RAD2DEG 57.295779513
 
+
 class MinimalPoseOdomSubscriber : public rclcpp::Node
 {
 public:
   MinimalPoseOdomSubscriber()
-  : Node("zed_odom_pose_tutorial")
+  : Node("zed_plot")
   {
     /* Note: it is very important to use a QOS profile for the subscriber that is compatible
          * with the QOS profile of the publisher.
@@ -60,11 +62,56 @@ public:
     mOdomSub = create_subscription<nav_msgs::msg::Odometry>(
       "odom", qos, std::bind(&MinimalPoseOdomSubscriber::odomCallback, this, _1));
 
+    // Create lidar scan subscriber
+    mScanSub = create_subscription<sensor_msgs::msg::LaserScan>(
+              "scan", rclcpp::SensorDataQoS(),
+              std::bind(&MinimalPoseOdomSubscriber::scanCallback, this, _1));
+
+    mPlotter = create_wall_timer(
+             std::chrono::milliseconds(100),
+            std::bind(&MinimalPoseOdomSubscriber::plotter, this));
+
     xArrow = std::vector<double>(2);
     yArrow = std::vector<double>(2);
   }
 
 protected:
+  void plotter()
+  {
+    plt::clf();
+    plt::plot(x, y, "-b");
+    plt::plot(xArrow, yArrow, "-r");
+    plt::scatter(scanX, scanY, 1);
+
+    // plt::xlim(-1, 1);
+    // plt::ylim(-1, 1);
+    plt::title("Zed2i Pos and Heading and S2 Scan");
+    plt::xlabel("x pos");
+    plt::ylabel("y pos");
+    plt::pause(0.01);
+  }
+
+  void scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan)
+  {
+    int count = scan->scan_time / scan->time_increment;
+
+    RCLCPP_INFO(
+      get_logger(),
+      "[SLLIDAR INFO]: I heard a laser scan %s[%d]:\n",
+      scan->header.frame_id.c_str(), count);
+
+    scanX.clear();
+    scanY.clear();
+
+    for (int i = 0; i < count; i++) {
+        float radian = scan->angle_min + scan->angle_increment * i;
+        if (!isinf(scan->ranges[i])) {
+            scanX.push_back(cos(radian) * scan->ranges[i]);
+            scanY.push_back(sin(radian) * scan->ranges[i]);
+        }
+    }
+  }
+
   void poseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
   {
     // Camera position in map frame
@@ -92,20 +139,18 @@ protected:
       msg->header.frame_id.c_str(), tx, ty, tz, roll * RAD2DEG, pitch * RAD2DEG, yaw * RAD2DEG,
       msg->header.stamp.sec, msg->header.stamp.nanosec);
 
-    x.push_back(tx);
-    y.push_back(ty);
-    xArrow[0] = tx;
-    xArrow[1] = tx + 0.01*cos(yaw);
-    yArrow[0] = ty;
-    yArrow[1] = ty + 0.01*sin(yaw);
+    if (!first) {
+      xStart = tx;
+      yStart = ty;
+      first = true;
+    }
 
-    plt::clf();
-    plt::plot(x, y, "-b");
-    plt::plot(xArrow, yArrow, "-r");
-    plt::title("Zed2i Pos and Heading");
-    plt::xlabel("x pos");
-    plt::ylabel("y pos");
-    plt::pause(0.01);
+    x.push_back(tx - xStart);
+    y.push_back(ty - yStart);
+    xArrow[0] = tx - xStart;
+    xArrow[1] = xArrow[0] + 0.05*cos(yaw);
+    yArrow[0] = ty - yStart;
+    yArrow[1] = yArrow[0] + 0.05*sin(yaw);
   }
 
   void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
@@ -141,15 +186,26 @@ private:
   std::vector<double> y;
   std::vector<double> xArrow;
   std::vector<double> yArrow;
+  std::vector<double> scanX;
+  std::vector<double> scanY;
+  bool first = false;
+  double xStart;
+  double yStart;
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr mPoseSub;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr mOdomSub;
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr mScanSub;
+  rclcpp::TimerBase::SharedPtr mPlotter;
 };
+
 
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
 
   auto pos_track_node = std::make_shared<MinimalPoseOdomSubscriber>();
+
+  // matplotlib not thread safe so this was causing issues
+  // std::thread worker(&MinimalPoseOdomSubscriber::plotter, pos_track_node);
 
   rclcpp::spin(pos_track_node);
   rclcpp::shutdown();
