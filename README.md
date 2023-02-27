@@ -1,4 +1,5 @@
 # zed-ros2-plot
+![ros2-build](https://github.com/ncsu-yoon-lab/zed-ros2-plot/actions/workflows/ros2-build.yml/badge.svg)
 
 This node plots position and heading data from the zed camera.
 
