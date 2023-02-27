@@ -1,21 +1,28 @@
-// Copyright 2022 Stereolabs
+// Copyright 2023 NC State Yoon Lab
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
 
 /**
- * This tutorial demonstrates simple receipt of ZED pose and odometry messages over the ROS system.
+ * This node plots position and heading using ZED and S2 Lidar scan.
  */
 
+#include <matplotlibcpp.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
 
@@ -23,7 +30,10 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/qos.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <matplotlibcpp.h>
+
+#include <memory>
+#include <vector>
+
 #include "sensor_msgs/msg/laser_scan.hpp"
 
 namespace plt = matplotlibcpp;
@@ -31,7 +41,6 @@ namespace plt = matplotlibcpp;
 using namespace std::placeholders;
 
 #define RAD2DEG 57.295779513
-
 
 class MinimalPoseOdomSubscriber : public rclcpp::Node
 {
@@ -64,12 +73,11 @@ public:
 
     // Create lidar scan subscriber
     mScanSub = create_subscription<sensor_msgs::msg::LaserScan>(
-              "scan", rclcpp::SensorDataQoS(),
-              std::bind(&MinimalPoseOdomSubscriber::scanCallback, this, _1));
+      "scan", rclcpp::SensorDataQoS(),
+      std::bind(&MinimalPoseOdomSubscriber::scanCallback, this, _1));
 
     mPlotter = create_wall_timer(
-             std::chrono::milliseconds(100),
-            std::bind(&MinimalPoseOdomSubscriber::plotter, this));
+      std::chrono::milliseconds(100), std::bind(&MinimalPoseOdomSubscriber::plotter, this));
 
     xArrow = std::vector<double>(2);
     yArrow = std::vector<double>(2);
@@ -96,8 +104,7 @@ protected:
     int count = scan->scan_time / scan->time_increment;
 
     RCLCPP_INFO(
-      get_logger(),
-      "[SLLIDAR INFO]: I heard a laser scan %s[%d, %d]:\n",
+      get_logger(), "[SLLIDAR INFO]: I heard a laser scan %s[%d, %d]:\n",
       scan->header.frame_id.c_str(), count, scan->ranges.size());
 
     scanX.clear();
@@ -106,8 +113,10 @@ protected:
     for (int i = 0; i < count; i++) {
       float radian = scan->angle_min + scan->angle_increment * i;
       if (!isinf(scan->ranges[i])) {
-        scanX.push_back(cos(radian - M_PI - (yawStart - yawCurr)) * scan->ranges[i] + xArrow[0] - xStart);
-        scanY.push_back(sin(radian - M_PI - (yawStart - yawCurr)) * scan->ranges[i] + yArrow[0] - yStart);
+        scanX.push_back(
+          cos(radian - M_PI - (yawStart - yawCurr)) * scan->ranges[i] + xArrow[0] - xStart);
+        scanY.push_back(
+          sin(radian - M_PI - (yawStart - yawCurr)) * scan->ranges[i] + yArrow[0] - yStart);
       }
     }
   }
@@ -168,19 +177,19 @@ protected:
       msg->header.stamp.sec, msg->header.stamp.nanosec);
 
     if (!first) {
-        xStart = tx;
-        yStart = ty;
-        yawStart = yaw;
-        first = true;
+      xStart = tx;
+      yStart = ty;
+      yawStart = yaw;
+      first = true;
     }
     yawCurr = yaw;
 
     x.push_back(-(ty - yStart));
     y.push_back(tx - xStart);
     xArrow[0] = -(ty - yStart);
-    xArrow[1] = -((ty - yStart) + 0.05*sin(yaw));
+    xArrow[1] = -((ty - yStart) + 0.05 * sin(yaw));
     yArrow[0] = tx - xStart;
-    yArrow[1] = (tx - xStart) + 0.05*cos(yaw);
+    yArrow[1] = (tx - xStart) + 0.05 * cos(yaw);
   }
 
 private:
@@ -200,7 +209,6 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr mScanSub;
   rclcpp::TimerBase::SharedPtr mPlotter;
 };
-
 
 int main(int argc, char * argv[])
 {
