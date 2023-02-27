@@ -1,0 +1,17 @@
+name: ros2-build
+
+on: workflow_dispatch
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: ros-tooling/setup-ros@v0.6
+        with:
+          required-ros-distributions: foxy
+      - uses: ros-tooling/action-ros-ci@v0.3
+        with:
+          package-name: zed_plot
+          target-ros2-distro: foxy
