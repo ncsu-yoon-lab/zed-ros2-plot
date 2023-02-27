@@ -104,11 +104,11 @@ protected:
     scanY.clear();
 
     for (int i = 0; i < count; i++) {
-        float radian = scan->angle_min + scan->angle_increment * i;
-        if (!isinf(scan->ranges[i])) {
-            scanX.push_back(cos(radian - M_PI - (yawStart - yawCurr)) * scan->ranges[i]);
-            scanY.push_back(sin(radian - M_PI - (yawStart - yawCurr)) * scan->ranges[i]);
-        }
+      float radian = scan->angle_min + scan->angle_increment * i;
+      if (!isinf(scan->ranges[i])) {
+        scanX.push_back(cos(radian - M_PI - (yawStart - yawCurr)) * scan->ranges[i] + xArrow[0] - xStart);
+        scanY.push_back(sin(radian - M_PI - (yawStart - yawCurr)) * scan->ranges[i] + yArrow[0] - yStart);
+      }
     }
   }
 
