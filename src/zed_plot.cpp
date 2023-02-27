@@ -83,8 +83,8 @@ protected:
     plt::plot(xArrow, yArrow, "-r");
     plt::scatter(scanX, scanY, 1);
 
-    // plt::xlim(-1, 1);
-    // plt::ylim(-1, 1);
+    plt::xlim(-5, 5);
+    plt::ylim(-5, 5);
     plt::title("Zed2i Pos and Heading and S2 Scan");
     plt::xlabel("x pos");
     plt::ylabel("y pos");
@@ -97,8 +97,8 @@ protected:
 
     RCLCPP_INFO(
       get_logger(),
-      "[SLLIDAR INFO]: I heard a laser scan %s[%d]:\n",
-      scan->header.frame_id.c_str(), count);
+      "[SLLIDAR INFO]: I heard a laser scan %s[%d, %d]:\n",
+      scan->header.frame_id.c_str(), count, scan->ranges.size());
 
     scanX.clear();
     scanY.clear();
@@ -106,8 +106,8 @@ protected:
     for (int i = 0; i < count; i++) {
         float radian = scan->angle_min + scan->angle_increment * i;
         if (!isinf(scan->ranges[i])) {
-            scanX.push_back(cos(radian) * scan->ranges[i]);
-            scanY.push_back(sin(radian) * scan->ranges[i]);
+            scanX.push_back(cos(radian - M_PI - (yawStart - yawCurr)) * scan->ranges[i]);
+            scanY.push_back(sin(radian - M_PI - (yawStart - yawCurr)) * scan->ranges[i]);
         }
     }
   }
@@ -138,19 +138,6 @@ protected:
       "Timestamp: %u.%u sec ",
       msg->header.frame_id.c_str(), tx, ty, tz, roll * RAD2DEG, pitch * RAD2DEG, yaw * RAD2DEG,
       msg->header.stamp.sec, msg->header.stamp.nanosec);
-
-    if (!first) {
-      xStart = tx;
-      yStart = ty;
-      first = true;
-    }
-
-    x.push_back(tx - xStart);
-    y.push_back(ty - yStart);
-    xArrow[0] = tx - xStart;
-    xArrow[1] = xArrow[0] + 0.05*cos(yaw);
-    yArrow[0] = ty - yStart;
-    yArrow[1] = yArrow[0] + 0.05*sin(yaw);
   }
 
   void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
@@ -179,6 +166,21 @@ protected:
       "Timestamp: %u.%u sec ",
       msg->header.frame_id.c_str(), tx, ty, tz, roll * RAD2DEG, pitch * RAD2DEG, yaw * RAD2DEG,
       msg->header.stamp.sec, msg->header.stamp.nanosec);
+
+    if (!first) {
+        xStart = tx;
+        yStart = ty;
+        yawStart = yaw;
+        first = true;
+    }
+    yawCurr = yaw;
+
+    x.push_back(-(ty - yStart));
+    y.push_back(tx - xStart);
+    xArrow[0] = -(ty - yStart);
+    xArrow[1] = -((ty - yStart) + 0.05*sin(yaw));
+    yArrow[0] = tx - xStart;
+    yArrow[1] = (tx - xStart) + 0.05*cos(yaw);
   }
 
 private:
@@ -191,6 +193,8 @@ private:
   bool first = false;
   double xStart;
   double yStart;
+  double yawStart = 0;
+  double yawCurr = 0;
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr mPoseSub;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr mOdomSub;
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr mScanSub;
