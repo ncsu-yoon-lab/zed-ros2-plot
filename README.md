@@ -13,6 +13,7 @@ The starting point for the code is based on the [zed_pose_tutorial](https://gith
 cd ~/ros2_ws
 colcon build --packages-select zed_plot
 
+ros2 run sllidar_ros2 sllidar_node
 ros2 launch zed_wrapper zed2i.launch.py
 ros2 run zed_plot zed_plot --ros-args -r odom:=/zed2i/zed_node/odom -r pose:=/zed2i/zed_node/pose
 ```
