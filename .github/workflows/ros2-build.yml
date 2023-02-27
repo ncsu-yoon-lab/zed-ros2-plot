@@ -8,6 +8,9 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+      - name: wget matplotlibcpp.h
+        run: sudo wget -P /usr/local/include https://raw.githubusercontent.com/lava/matplotlib-cpp/master/matplotlibcpp.h
+
       - uses: ros-tooling/setup-ros@v0.6
         with:
           required-ros-distributions: foxy
