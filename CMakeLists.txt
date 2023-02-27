@@ -58,10 +58,10 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(PythonLibs REQUIRED)
-find_package(sensor_msgs REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -78,7 +78,6 @@ add_custom_target(${PROJECT_NAME}_files SOURCES ${extra_files})
 # includes
 include_directories(
     ${rclcpp_INCLUDE_DIRS}
-    ${sensor_msgs_INCLUDE_DIRS}
     ${PYTHON_INCLUDE_DIRS}
 )
 
@@ -89,12 +88,10 @@ ament_target_dependencies(zed_plot
   rclcpp
   geometry_msgs
   nav_msgs
+  sensor_msgs
   tf2
   tf2_ros
-  sensor_msgs
 )
-
-
 
 # Install executable
 install(
