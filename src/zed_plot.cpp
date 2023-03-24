@@ -35,6 +35,8 @@
 #include <vector>
 
 #include "sensor_msgs/msg/laser_scan.hpp"
+#include "foxglove_msgs/msg/laser_scan.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 namespace plt = matplotlibcpp;
 
@@ -79,24 +81,48 @@ public:
     mPlotter = create_wall_timer(
       std::chrono::milliseconds(100), std::bind(&MinimalPoseOdomSubscriber::plotter, this));
 
+    // mScanPub = this->create_publisher<sensor_msgs::msg::LaserScan>("myScan", 10);
+    mGridPub = create_publisher<nav_msgs::msg::OccupancyGrid>("myGrid", 10);
+
     xArrow = std::vector<double>(2);
     yArrow = std::vector<double>(2);
+    data = std::vector<int8_t>(160000, 0);
   }
 
 protected:
   void plotter()
   {
-    plt::clf();
-    plt::plot(x, y, "-b");
-    plt::plot(xArrow, yArrow, "-r");
-    plt::scatter(scanX, scanY, 1);
+//    plt::clf();
+//    plt::plot(x, y, "-b");
+//    plt::plot(xArrow, yArrow, "-r");
+//    plt::scatter(scanX, scanY, 1);
+//
+//    plt::xlim(-5, 5);
+//    plt::ylim(-5, 5);
+//    plt::title("Zed2i Pos and Heading and S2 Scan");
+//    plt::xlabel("x pos");
+//    plt::ylabel("y pos");
+//    plt::pause(0.01);
 
-    plt::xlim(-5, 5);
-    plt::ylim(-5, 5);
-    plt::title("Zed2i Pos and Heading and S2 Scan");
-    plt::xlabel("x pos");
-    plt::ylabel("y pos");
-    plt::pause(0.01);
+//    auto myGrid = nav_msgs::msg::OccupancyGrid();
+//    myGrid.header.frame_id = "myGrid";
+//    myGrid.info.width = 400;
+//    myGrid.info.height = 400;
+//    myGrid.info.resolution = 0.01;
+//    myGrid.info.origin.position.x = -2;
+//    myGrid.info.origin.position.y = -2;
+//    std::vector<int8_t> data(160000, 100);
+//    for (int i = 0; i < 40000; i++) {
+//      data[i] = 0;
+//    }
+//    // data[0] = 100;
+//    myGrid.data = data;
+//    mGridPub->publish(myGrid);
+        for (int i = 0; i < data.size(); i++) {
+            if (data[i] > 0) {
+                data[i] -= 1;
+            }
+        }
   }
 
   void scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan)
@@ -110,6 +136,8 @@ protected:
     scanX.clear();
     scanY.clear();
 
+    //std::vector<int8_t> data(160000, 0);
+
     for (int i = 0; i < count; i++) {
       float radian = scan->angle_min + scan->angle_increment * i;
       if (!isinf(scan->ranges[i])) {
@@ -117,8 +145,30 @@ protected:
           cos(radian - M_PI - (yawStart - yawCurr)) * scan->ranges[i] + xArrow[0] - xStart);
         scanY.push_back(
           sin(radian - M_PI - (yawStart - yawCurr)) * scan->ranges[i] + yArrow[0] - yStart);
+
+        int row_index = (-scanX.back() + 2) / 0.01;
+        int col_index = (scanY.back() + 2) / 0.01;
+        if (row_index < 0 || row_index >= 400 || col_index < 0 || col_index >= 400) {
+            continue;
+        }
+        int loc_index = (row_index * 400) + col_index;
+        if (data[loc_index] < 100) data[loc_index] += 1;
+        // data[loc_index] = 100;
       }
     }
+
+    auto myGrid = nav_msgs::msg::OccupancyGrid();
+    myGrid.header.frame_id = "myGrid";
+    myGrid.info.width = 400;
+    myGrid.info.height = 400;
+    myGrid.info.resolution = 0.01;
+    myGrid.info.origin.position.x = -2;
+    myGrid.info.origin.position.y = -2;
+    myGrid.data = data;
+    mGridPub->publish(myGrid);
+
+    // auto myScan = foxglove_msgs::msg::LaserScan();
+    // mScanPub->publish(*scan);
   }
 
   void poseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
@@ -208,6 +258,9 @@ private:
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr mOdomSub;
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr mScanSub;
   rclcpp::TimerBase::SharedPtr mPlotter;
+  rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr mScanPub;
+  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr mGridPub;
+  std::vector<int8_t> data;
 };
 
 int main(int argc, char * argv[])
