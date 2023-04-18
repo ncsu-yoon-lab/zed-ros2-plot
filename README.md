@@ -14,6 +14,15 @@ The starting point for the code is based on the [zed_pose_tutorial](https://gith
 cd ~/ros2_ws
 colcon build --packages-select zed_plot
 
+# foxglove setup
+ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+# rviz sample
+ros2 launch zed_display_rviz2 display_zed2.launch.py
+# transforms
+ros2 run tf2_ros static_transform_publisher 0 0 0 1.57 0 0 base_link laser_frame
+ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map myGrid
+
+
 ros2 run sllidar_ros2 sllidar_node
 ros2 launch zed_wrapper zed2i.launch.py
 ros2 run zed_plot zed_plot --ros-args -r odom:=/zed2i/zed_node/odom -r pose:=/zed2i/zed_node/pose
