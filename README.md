@@ -19,8 +19,10 @@ ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 # rviz sample
 ros2 launch zed_display_rviz2 display_zed2.launch.py
 # transforms
-ros2 run tf2_ros static_transform_publisher 0 0 0 1.57 0 0 base_link laser_frame
+ros2 run tf2_ros static_transform_publisher 0 0 0 1.57 0 -0.27 base_link laser_frame
 ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map myGrid
+# record
+ros2 bag record /scan /zed2i/zed_node/pose /tf /tf_static
 
 
 ros2 run sllidar_ros2 sllidar_node
