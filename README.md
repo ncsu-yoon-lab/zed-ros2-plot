@@ -21,8 +21,14 @@ ros2 launch zed_display_rviz2 display_zed2.launch.py
 # transforms
 ros2 run tf2_ros static_transform_publisher 0 0 0 1.57 0 -0.27 base_link laser_frame
 ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map myGrid
+ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 odom robotPose
 # record
 ros2 bag record /scan /zed2i/zed_node/pose /tf /tf_static
+
+# start wolfwagen
+ros2 run joy joy_node --ros-args -p autorepeat_rate:=0.0
+./xbox_controller.py
+./pwm_genV3.py
 
 
 ros2 run sllidar_ros2 sllidar_node

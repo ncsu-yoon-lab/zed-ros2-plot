@@ -70,8 +70,8 @@ public:
       "pose", qos, std::bind(&MinimalPoseOdomSubscriber::poseCallback, this, _1));
 
     // Create odom subscriber
-    mOdomSub = create_subscription<nav_msgs::msg::Odometry>(
-      "odom", qos, std::bind(&MinimalPoseOdomSubscriber::odomCallback, this, _1));
+    // mOdomSub = create_subscription<nav_msgs::msg::Odometry>(
+    //   "odom", qos, std::bind(&MinimalPoseOdomSubscriber::odomCallback, this, _1));
 
     // Create lidar scan subscriber
     mScanSub = create_subscription<sensor_msgs::msg::LaserScan>(
@@ -83,6 +83,8 @@ public:
 
     // mScanPub = this->create_publisher<sensor_msgs::msg::LaserScan>("myScan", 10);
     mGridPub = create_publisher<nav_msgs::msg::OccupancyGrid>("myGrid", 10);
+
+    mPosePub = create_publisher<geometry_msgs::msg::PoseStamped>("robotPose", 10);
 
     xArrow = std::vector<double>(2);
     yArrow = std::vector<double>(2);
@@ -189,14 +191,26 @@ protected:
     // Roll Pitch and Yaw from rotation matrix
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
+    
+    tf2::Quaternion q_new;
+    q_new.setRPY(0, 0, yaw);
 
-    // Output the measure
     RCLCPP_INFO(
       get_logger(),
-      "Received pose in '%s' frame : X: %.2f Y: %.2f Z: %.2f - R: %.2f P: %.2f Y: %.2f - "
-      "Timestamp: %u.%u sec ",
-      msg->header.frame_id.c_str(), tx, ty, tz, roll * RAD2DEG, pitch * RAD2DEG, yaw * RAD2DEG,
-      msg->header.stamp.sec, msg->header.stamp.nanosec);
+      "R: %.2f P: %.2f Y: %.2f", roll * RAD2DEG, pitch * RAD2DEG, yaw * RAD2DEG);
+
+    auto robotPose = geometry_msgs::msg::PoseStamped();
+    robotPose.header.frame_id = "map";
+    robotPose.pose.position.x = tx;
+    robotPose.pose.position.y = ty;
+    robotPose.pose.position.z = tz;
+    robotPose.pose.orientation.x = q_new.getX();
+    robotPose.pose.orientation.y = q_new.getY();
+    robotPose.pose.orientation.z = q_new.getZ();
+    robotPose.pose.orientation.w = q_new.getW();
+
+    mPosePub->publish(robotPose);
+
   }
 
   void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
@@ -260,6 +274,7 @@ private:
   rclcpp::TimerBase::SharedPtr mPlotter;
   rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr mScanPub;
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr mGridPub;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr mPosePub;
   std::vector<int8_t> data;
 };
 
