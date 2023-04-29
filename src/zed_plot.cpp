@@ -25,6 +25,7 @@
 #include <matplotlibcpp.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
@@ -85,6 +86,8 @@ public:
     mGridPub = create_publisher<nav_msgs::msg::OccupancyGrid>("myGrid", 10);
 
     mPosePub = create_publisher<geometry_msgs::msg::PoseStamped>("robotPose", 10);
+
+    mTfBroadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
     xArrow = std::vector<double>(2);
     yArrow = std::vector<double>(2);
@@ -200,7 +203,7 @@ protected:
       "R: %.2f P: %.2f Y: %.2f", roll * RAD2DEG, pitch * RAD2DEG, yaw * RAD2DEG);
 
     auto robotPose = geometry_msgs::msg::PoseStamped();
-    robotPose.header.frame_id = "map";
+    robotPose.header.frame_id = "robotPoseTopic";
     robotPose.pose.position.x = tx;
     robotPose.pose.position.y = ty;
     robotPose.pose.position.z = tz;
@@ -208,6 +211,18 @@ protected:
     robotPose.pose.orientation.y = q_new.getY();
     robotPose.pose.orientation.z = q_new.getZ();
     robotPose.pose.orientation.w = q_new.getW();
+
+    geometry_msgs::msg::TransformStamped robotPoseTransform;
+    robotPoseTransform.transform.translation.x = tx;
+    robotPoseTransform.transform.translation.y = ty;
+    robotPoseTransform.transform.translation.z = tz;
+    robotPoseTransform.transform.rotation.x = q_new.getX();
+    robotPoseTransform.transform.rotation.y = q_new.getY();
+    robotPoseTransform.transform.rotation.z = q_new.getZ();
+    robotPoseTransform.transform.rotation.w = q_new.getW();
+    robotPoseTransform.header.frame_id = "map";
+    robotPoseTransform.child_frame_id = "robotPose";
+    mTfBroadcaster->sendTransform(robotPoseTransform);
 
     mPosePub->publish(robotPose);
 
@@ -275,6 +290,8 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr mScanPub;
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr mGridPub;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr mPosePub;
+
+  std::unique_ptr<tf2_ros::TransformBroadcaster> mTfBroadcaster;
   std::vector<int8_t> data;
 };
 

@@ -21,7 +21,7 @@ ros2 launch zed_display_rviz2 display_zed2.launch.py
 # transforms
 ros2 run tf2_ros static_transform_publisher 0 0 0 1.57 0 -0.27 base_link laser_frame
 ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map myGrid
-ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 odom robotPose
+ros2 run tf2_ros static_transform_publisher 0 0 0 1.57 0 0 robotPose laser_frame
 # record
 ros2 bag record /scan /zed2i/zed_node/pose /tf /tf_static
 
