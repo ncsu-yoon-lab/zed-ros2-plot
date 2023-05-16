@@ -202,11 +202,26 @@ protected:
       get_logger(),
       "R: %.2f P: %.2f Y: %.2f", roll * RAD2DEG, pitch * RAD2DEG, yaw * RAD2DEG);
 
+    if (!first) {
+      xStart = tx;
+      yStart = ty;
+      yawStart = yaw;
+      first = true;
+    }
+    yawCurr = yaw;
+
+    x.push_back(-(ty - yStart));
+    y.push_back(tx - xStart);
+    xArrow[0] = -(ty - yStart);
+    xArrow[1] = -((ty - yStart) + 0.05 * sin(yaw));
+    yArrow[0] = tx - xStart;
+    yArrow[1] = (tx - xStart) + 0.05 * cos(yaw);
+
     auto robotPose = geometry_msgs::msg::PoseStamped();
     robotPose.header.frame_id = "robotPoseTopic";
     robotPose.pose.position.x = tx;
     robotPose.pose.position.y = ty;
-    robotPose.pose.position.z = tz;
+    robotPose.pose.position.z = 0;
     robotPose.pose.orientation.x = q_new.getX();
     robotPose.pose.orientation.y = q_new.getY();
     robotPose.pose.orientation.z = q_new.getZ();
@@ -215,7 +230,7 @@ protected:
     geometry_msgs::msg::TransformStamped robotPoseTransform;
     robotPoseTransform.transform.translation.x = tx;
     robotPoseTransform.transform.translation.y = ty;
-    robotPoseTransform.transform.translation.z = tz;
+    robotPoseTransform.transform.translation.z = 0;
     robotPoseTransform.transform.rotation.x = q_new.getX();
     robotPoseTransform.transform.rotation.y = q_new.getY();
     robotPoseTransform.transform.rotation.z = q_new.getZ();
@@ -254,21 +269,6 @@ protected:
       "Timestamp: %u.%u sec ",
       msg->header.frame_id.c_str(), tx, ty, tz, roll * RAD2DEG, pitch * RAD2DEG, yaw * RAD2DEG,
       msg->header.stamp.sec, msg->header.stamp.nanosec);
-
-    if (!first) {
-      xStart = tx;
-      yStart = ty;
-      yawStart = yaw;
-      first = true;
-    }
-    yawCurr = yaw;
-
-    x.push_back(-(ty - yStart));
-    y.push_back(tx - xStart);
-    xArrow[0] = -(ty - yStart);
-    xArrow[1] = -((ty - yStart) + 0.05 * sin(yaw));
-    yArrow[0] = tx - xStart;
-    yArrow[1] = (tx - xStart) + 0.05 * cos(yaw);
   }
 
 private:
