@@ -221,7 +221,7 @@ protected:
     robotPoseTransform.transform.rotation.z = q_new.getZ();
     robotPoseTransform.transform.rotation.w = q_new.getW();
     robotPoseTransform.header.frame_id = "map";
-    robotPoseTransform.child_frame_id = "robotPose";
+    robotPoseTransform.child_frame_id = "robotPoseFrame";
     mTfBroadcaster->sendTransform(robotPoseTransform);
 
     mPosePub->publish(robotPose);
