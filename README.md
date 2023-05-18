@@ -25,6 +25,9 @@ ros2 run tf2_ros static_transform_publisher 0 0 0 1.57 0 0 robotPoseFrame laser_
 # record
 ros2 bag record /scan /zed2i/zed_node/pose /robotPose /tf /tf_static
 
+# launch
+ros2 launch zed_plot zed_plot_launch.py
+
 # start wolfwagen
 ros2 run joy joy_node --ros-args -p autorepeat_rate:=0.0
 ./xbox_controller.py
