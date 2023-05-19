@@ -79,8 +79,8 @@ public:
       "scan", rclcpp::SensorDataQoS(),
       std::bind(&MinimalPoseOdomSubscriber::scanCallback, this, _1));
 
-    mPlotter = create_wall_timer(
-      std::chrono::milliseconds(100), std::bind(&MinimalPoseOdomSubscriber::plotter, this));
+    // mPlotter = create_wall_timer(
+    //   std::chrono::milliseconds(1000), std::bind(&MinimalPoseOdomSubscriber::plotter, this));
 
     // mScanPub = this->create_publisher<sensor_msgs::msg::LaserScan>("myScan", 10);
     mGridPub = create_publisher<nav_msgs::msg::OccupancyGrid>("myGrid", 10);
@@ -91,7 +91,7 @@ public:
 
     xArrow = std::vector<double>(2);
     yArrow = std::vector<double>(2);
-    data = std::vector<int8_t>(160000, 0);
+    data = std::vector<int8_t>(640000, 0);
   }
 
 protected:
@@ -153,10 +153,10 @@ protected:
 
         int row_index = (-scanX.back() + 2) / 0.01;
         int col_index = (scanY.back() + 2) / 0.01;
-        if (row_index < 0 || row_index >= 400 || col_index < 0 || col_index >= 400) {
+        if (row_index < 0 || row_index >= 800 || col_index < 0 || col_index >= 800) {
             continue;
         }
-        int loc_index = (row_index * 400) + col_index;
+        int loc_index = (row_index * 800) + col_index;
         if (data[loc_index] < 100) data[loc_index] += 1;
         // data[loc_index] = 100;
       }
@@ -164,8 +164,8 @@ protected:
 
     auto myGrid = nav_msgs::msg::OccupancyGrid();
     myGrid.header.frame_id = "myGrid";
-    myGrid.info.width = 400;
-    myGrid.info.height = 400;
+    myGrid.info.width = 800;
+    myGrid.info.height = 800;
     myGrid.info.resolution = 0.01;
     myGrid.info.origin.position.x = -2;
     myGrid.info.origin.position.y = -2;
